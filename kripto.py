@@ -2,6 +2,11 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
+# Fungsi untuk menghitung Hamming Weight
+def hamming_weight(x):
+    """Menghitung jumlah bit '1' dalam representasi biner dari x."""
+    return bin(x).count('1')
+
 # Fungsi untuk Walsh Transform
 def walsh_transform(f):
     n = len(f).bit_length() - 1
@@ -31,6 +36,67 @@ def nonlinearity(sbox, n, m):
         if distance < min_distance:
             min_distance = distance
     return min_distance
+
+def sac(sbox, n):
+    total_weight = 0
+    total_cases = 0
+
+    for i in range(2**n):
+        original_output = sbox[i]
+        for bit in range(n):
+            flipped_input = i ^ (1 << bit)
+            flipped_output = sbox[flipped_input]
+            diff = original_output ^ flipped_output
+            weight = hamming_weight(diff)
+            total_weight += weight
+            total_cases += n
+    sac_value = total_weight / total_cases
+    return sac_value
+
+def bic_nl(sbox, n):
+    total_nl = 0
+    count = 0
+
+    for bit1 in range(n):
+        for bit2 in range(bit1 + 1, n):
+            count += 1
+            sbox_bit1 = [(y >> bit1) & 1 for y in sbox]
+            sbox_bit2 = [(y >> bit2) & 1 for y in sbox]
+            combined = [b1 ^ b2 for b1, b2 in zip(sbox_bit1, sbox_bit2)]
+            W = walsh_transform(combined)
+            max_walsh = np.max(np.abs(W))
+            nl = 2 ** (n - 1) - max_walsh / 2
+            total_nl += nl
+
+    bic_nl_value = total_nl / count
+    return bic_nl_value
+
+def calculate_bic_sac(sbox):
+    n = len(sbox)
+    bit_length = 8
+    total_pairs = 0
+    total_independence = 0
+
+    for i in range(bit_length):
+        for j in range(i + 1, bit_length):
+            independence_sum = 0
+            for x in range(n):
+                for bit_to_flip in range(bit_length):
+                    flipped_x = x ^ (1 << bit_to_flip)
+                    y1 = sbox[x]
+                    y2 = sbox[flipped_x]
+                    b1_i = (y1 >> i) & 1
+                    b1_j = (y1 >> j) & 1
+                    b2_i = (y2 >> i) & 1
+                    b2_j = (y2 >> j) & 1
+                    independence_sum += ((b1_i ^ b2_i) ^ (b1_j ^ b2_j))
+
+            pair_independence = independence_sum / (n * bit_length)
+            total_independence += pair_independence
+            total_pairs += 1
+
+    bic_sac_value = total_independence / total_pairs
+    return bic_sac_value
 
 # Fungsi untuk SAC
 def compute_sac_matrix(sbox, n):
@@ -93,12 +159,14 @@ def calculate_sac(sbox, bit_i, bit_j):
 
 def generate_bic_sac_matrix(sbox):
     bit_length = 8
-    matrix = np.zeros((bit_length, bit_length))
+    matrix = np.zeros((bit_length, bit_length), dtype=object)
 
     for i in range(bit_length):
         for j in range(bit_length):
             if i != j:
                 matrix[i][j] = calculate_sac(sbox, i, j)
+            else:
+                matrix[i][j] = "-"  # Replace diagonal 0 with "-"
 
     return matrix
 
@@ -186,6 +254,8 @@ if uploaded_file:
             n = 8
             sac_matrix = compute_sac_matrix(sbox, n)
             df_sac = pd.DataFrame(sac_matrix, columns=[f"Bit-{i+1}" for i in range(n)], index=[f"Bit-{i+1}" for i in range(n)])
+            sac_value = sac(sbox, n)
+            st.success(f"**SAC Value:** {sac_value:.5f}")
             st.write("**SAC Matrix:**")
             st.dataframe(df_sac, use_container_width=True)
 
@@ -206,6 +276,8 @@ if uploaded_file:
             bic_nl_values = bic_nl_matrix(sboxes, n)
             columns = [f"S-box{i+1}" for i in range(len(sboxes))]
             df_bic_nl = pd.DataFrame(bic_nl_values, index=columns, columns=columns)
+            bic_nl_value = bic_nl(sbox, n)
+            st.success(f"**BIC-NL Value:** {bic_nl_value:.5f}")
             st.write("**BIC-NL Matrix:**")
             st.dataframe(df_bic_nl, use_container_width=True)
 
@@ -223,6 +295,8 @@ if uploaded_file:
             st.subheader("Bit Independence Criterion - SAC (BIC-SAC)")
             bic_sac_matrix = generate_bic_sac_matrix(sbox)
             df_bic_sac = pd.DataFrame(bic_sac_matrix, index=[f"Bit {i}" for i in range(8)], columns=[f"Bit {j}" for j in range(8)])
+            bic_sac_value = calculate_bic_sac(sbox)
+            st.success(f"**BIC-SAC Value:** {bic_sac_value:.5f}")
             st.write("**BIC-SAC Matrix:**")
             st.dataframe(df_bic_sac, use_container_width=True)
 
