@@ -147,13 +147,20 @@ def dap(sbox, n):
 st.title("🔐 S-Box Metrics Calculator")
 st.markdown("Use this tool to calculate various cryptographic metrics for S-Boxes.")
 
-# Upload file CSV
+# Upload file CSV atau Excel
 st.sidebar.header("⚙️ Configuration")
-uploaded_file = st.sidebar.file_uploader("Upload CSV file for S-Box configuration", type=["csv"], help="Upload a CSV file containing the S-Box configuration.")
+uploaded_file = st.sidebar.file_uploader("Upload S-Box configuration (CSV or Excel):", type=["csv", "xlsx"], help="Upload a file containing the S-Box configuration.")
 
 if uploaded_file:
-    # Baca file CSV menjadi DataFrame
-    df = pd.read_csv(uploaded_file, header=None)
+    # Baca file berdasarkan formatnya
+    if uploaded_file.name.endswith(".csv"):
+        df = pd.read_csv(uploaded_file, header=None)
+    elif uploaded_file.name.endswith(".xlsx"):
+        df = pd.read_excel(uploaded_file, header=None)
+    else:
+        st.error("Unsupported file format!")
+        st.stop()
+
     st.subheader("📄 Uploaded S-Box Configuration")
     st.dataframe(df, use_container_width=True)
 
