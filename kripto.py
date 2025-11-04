@@ -23,8 +23,8 @@ def _inject_css():
 
       /* Hero */
       .hero {
-        position: relative; border-radius: 24px; padding: 36px; overflow: hidden;
-        display: flex; gap: 32px; align-items: center;
+        position: relative; border-radius: 24px; padding: 36px; overflow: hidden; 
+        display: flex; gap: 32px; align-items: center; justify-content: center;
         background: radial-gradient(1200px 600px at 15% 10%, rgba(99,102,241,.16), transparent 50%),
                     linear-gradient(135deg, #0f172a 0%, #111827 60%, #0b1220 100%);
         color: #e5e7eb; 
@@ -42,9 +42,10 @@ def _inject_css():
         padding: 6px 10px; border-radius: 999px; font-size: 12px;
       }
       .hero img {
-        width: 380px; max-width: 44vw; height: auto; border-radius: 20px;
+        width: 300px; max-width: 44vw; height: auto; border-radius: 20px;
         border: 1px solid rgba(255,255,255,.12); 
         box-shadow: 0 24px 70px rgba(2,6,23,.55);
+        display: block; margin: 0 auto;
       }
 
       /* Section title w/ anchor icon */
